@@ -45,7 +45,7 @@ class _TaskScreenState extends State<TaskScreen> {
       final response = await _supabase
           .from('tasks')
           .select('task_title, task_link, video_link')
-          .eq('site_name', widget.siteName.toLowerCase());
+          .eq('site_name', widget.siteName);
 
       if (mounted) {
         setState(() {

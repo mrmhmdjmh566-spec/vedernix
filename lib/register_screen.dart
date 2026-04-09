@@ -27,14 +27,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
-        if (mounted && response.user != null) {
-          // تحديث الاسم في جدول الملف الشخصي
-          await _supabase
-              .from('profiles')
-              .update({'name': _nameController.text.trim()})
-              .eq('id', response.user!.id);
+        if (mounted) {
+          // التحقق من وجود جلسة (Session) للتأكد من أن المستخدم مسجل دخول
+          if (response.session != null) {
+            // استخدام upsert لضمان إنشاء أو تحديث الملف الشخصي
+            await _supabase.from('profiles').upsert({
+              'id': response.user!.id,
+              'name': _nameController.text.trim(),
+            });
 
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+            if (mounted) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/home',
+                (route) => false,
+              );
+            }
+          } else {
+            // إذا لم توجد جلسة، فهذا يعني أن تفعيل البريد الإلكتروني مطلوب
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'يرجى تفعيل الحساب من الرابط المرسل لبريدك الإلكتروني',
+                ),
+              ),
+            );
+            // يمكنك توجيه المستخدم لصفحة تسجيل الدخول هنا إذا أردت
+            // Navigator.pushReplacementNamed(context, '/login');
+          }
         }
       } on AuthException catch (error) {
         if (mounted) {

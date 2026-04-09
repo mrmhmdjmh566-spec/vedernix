@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:omar_242/advertiser_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String userType;
+  const LoginScreen({super.key, this.userType = 'user'});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -26,7 +28,21 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text.trim(),
         );
         if (mounted && response.user != null) {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          if (widget.userType == 'advertiser') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdvertiserDashboard(),
+              ),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          }
         }
       } on AuthException catch (error) {
         if (mounted) {

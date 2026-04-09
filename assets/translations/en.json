@@ -1,5 +1,9 @@
 {
   "tasks": "Tasks",
+  "ruble_earner": "Ruble Earner",
+  "welcome": "Welcome",
+  "no_sites_currently": "No sites available currently",
+  "error_loading_data": "Error loading data",
   "login": "Login",
   "register": "Register",
   "home": "Home",

@@ -7,6 +7,7 @@ import 'package:omar_242/login_screen.dart';
 import 'package:omar_242/home_screen.dart';
 import 'package:omar_242/reset_password_screen.dart';
 import 'package:omar_242/register_screen.dart';
+import 'package:omar_242/welcome_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
 
@@ -26,9 +27,9 @@ void main() async {
 
   runApp(
     EasyLocalization(
-      supportedLocales: [Locale('en'), Locale('ar')],
+      supportedLocales: const [Locale('en')],
       path: 'assets/translations',
-      fallbackLocale: Locale('en'),
+      startLocale: const Locale('en'),
       child: const MyApp(),
     ),
   );
@@ -63,7 +64,9 @@ class _MyAppState extends State<MyApp> {
   void _handleIncomingLinks() {
     _sub = _appLinks.uriLinkStream.listen(
       (uri) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
         if (uri.scheme == 'omar242' && uri.host == 'reset-password') {
           _navigatorKey.currentState?.pushNamed('/reset-password');
         }
@@ -77,7 +80,6 @@ class _MyAppState extends State<MyApp> {
   /// Handle the initial Uri (when app is not running)
   Future<void> _handleInitialUri() async {
     try {
-      // تعديل هنا: getInitialAppLink → getInitialLink
       final uri = await _appLinks.getInitialLink();
       if (uri != null &&
           uri.scheme == 'omar242' &&
@@ -96,13 +98,43 @@ class _MyAppState extends State<MyApp> {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      title: 'ruble_earner'.tr(),
+      title: 'Ruble Earner',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        colorScheme: ColorScheme.light(
+          primary: Colors.orange[400]!,
+          secondary: Colors.orange[200]!,
+          surface: Colors.white,
+        ),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.orange[700],
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.orange[700]),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange[400],
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
       ),
-      initialRoute: '/login',
+      initialRoute: '/welcome',
       routes: {
+        '/welcome': (context) => const WelcomePage(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/register': (context) => const RegisterScreen(),
