@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.omar_242">
+    package="com.example.vedernix">
    <application
-        android:label="omar_242"
+        android:label="VEDERNIX"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -25,7 +25,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="omar242" android:host="reset-password"/>
+                <data android:scheme="vedernix" android:host="reset-password"/>
             </intent-filter>
         </activity>
         <meta-data

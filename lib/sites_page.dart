@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SitesPage extends StatefulWidget {
@@ -198,8 +199,8 @@ class _SitesPageState extends State<SitesPage> {
               ],
             ),
             const SizedBox(height: 20),
-            const Text(
-              "Select the sites you want to work on",
+            Text(
+              "select_sites_work".tr(),
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -222,10 +223,7 @@ class _SitesPageState extends State<SitesPage> {
               );
             }),
             const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: saveSettings,
-              child: const Text("Save Settings"),
-            ),
+            ElevatedButton(onPressed: saveSettings, child: Text("save".tr())),
           ],
         ),
       ),

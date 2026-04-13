@@ -27,8 +27,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle(); // Let navigation to initial route finish
-    // Verify that our app shows the login screen. 'en' is the default.
-    expect(find.widgetWithText(AppBar, 'Login'), findsOneWidget);
-    expect(find.text('Email Address'), findsOneWidget);
+    // Verify that our app shows the welcome screen or app title.
+    expect(find.widgetWithText(AppBar, 'VEDERNIX'), findsOneWidget);
+    expect(
+      find.text('Welcome to VEDERNIX!'),
+      findsOneWidget,
+    ); // Assuming WelcomePage has this text
   });
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:omar_242/advertiser_dashboard.dart';
+import 'package:vedernix/advertiser_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   final String userType;

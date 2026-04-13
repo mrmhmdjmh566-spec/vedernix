@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'sites_page.dart';
+import 'user_settings_main_page.dart';
 
 class TasksPage extends StatefulWidget {
   final String siteName;
@@ -189,22 +190,13 @@ class _TasksPageState extends State<TasksPage> {
 
       _loadData();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task executed successfully')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('task_completed'.tr())));
+      }
     } catch (e) {
       if (mounted) debugPrint('Error executing task: $e');
-    }
-  }
-
-  void _openSettings() async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (context) => const SitesPage()),
-    );
-
-    if (result == true && mounted) {
-      _loadData();
     }
   }
 
@@ -212,19 +204,23 @@ class _TasksPageState extends State<TasksPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.siteName} Tasks'),
+        title: Text('${widget.siteName} ${"tasks".tr()}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: _openSettings,
-            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UserSettingsMainPage()),
+              ).then((_) => _loadData());
+            },
           ),
         ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : tasks.isEmpty
-          ? const Center(child: Text('No tasks available for this site'))
+          ? Center(child: Text('no_tasks_found'.tr()))
           : ListView.builder(
               itemCount: tasks.length,
               itemBuilder: (context, index) {
@@ -269,7 +265,7 @@ class _TasksPageState extends State<TasksPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Reward: ${reward.toStringAsFixed(2)} RUB',
+                              '${"reward".tr()}: ${reward.toStringAsFixed(2)} RUB',
                               style: const TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold,
@@ -277,7 +273,7 @@ class _TasksPageState extends State<TasksPage> {
                               ),
                             ),
                             Text(
-                              'Progress: $completedCount/$maxUsers',
+                              '${"progress".tr()}: $completedCount/$maxUsers',
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 14,
@@ -297,7 +293,7 @@ class _TasksPageState extends State<TasksPage> {
                                     Icons.play_circle_fill,
                                     color: Colors.white,
                                   ),
-                                  label: const Text('Watch Video'),
+                                  label: Text('watch_video'.tr()),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.orange[300],
                                     foregroundColor: Colors.white,
@@ -312,7 +308,7 @@ class _TasksPageState extends State<TasksPage> {
                                   Icons.open_in_new,
                                   color: Colors.white,
                                 ),
-                                label: const Text('Execute Task'),
+                                label: Text('execute_task'.tr()),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.orange[600],
                                   foregroundColor: Colors.white,

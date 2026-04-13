@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:omar_242/forgot_password_screen.dart';
-import 'package:omar_242/login_screen.dart';
-import 'package:omar_242/home_screen.dart';
-import 'package:omar_242/reset_password_screen.dart';
-import 'package:omar_242/register_screen.dart';
-import 'package:omar_242/welcome_page.dart';
+import 'package:vedernix/forgot_password_screen.dart';
+import 'package:vedernix/login_screen.dart';
+import 'package:vedernix/home_screen.dart';
+import 'package:vedernix/reset_password_screen.dart';
+import 'package:vedernix/register_screen.dart';
+import 'package:vedernix/welcome_page.dart';
+import 'package:vedernix/profile_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
 
@@ -27,8 +28,9 @@ void main() async {
 
   runApp(
     EasyLocalization(
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('ar'), Locale('ru')],
       path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
       startLocale: const Locale('en'),
       child: const MyApp(),
     ),
@@ -67,7 +69,7 @@ class _MyAppState extends State<MyApp> {
         if (!mounted) {
           return;
         }
-        if (uri.scheme == 'omar242' && uri.host == 'reset-password') {
+        if (uri.scheme == 'vedernix' && uri.host == 'reset-password') {
           _navigatorKey.currentState?.pushNamed('/reset-password');
         }
       },
@@ -82,7 +84,7 @@ class _MyAppState extends State<MyApp> {
     try {
       final uri = await _appLinks.getInitialLink();
       if (uri != null &&
-          uri.scheme == 'omar242' &&
+          uri.scheme == 'vedernix' &&
           uri.host == 'reset-password') {
         _navigatorKey.currentState?.pushNamed('/reset-password');
       }
@@ -94,11 +96,12 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       navigatorKey: _navigatorKey,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
-      title: 'Ruble Earner',
+      title: 'VEDERNIX',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.light(
@@ -140,6 +143,7 @@ class _MyAppState extends State<MyApp> {
         '/register': (context) => const RegisterScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
+        '/profile': (context) => const ProfilePage(),
       },
     );
   }

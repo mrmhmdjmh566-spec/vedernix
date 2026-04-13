@@ -33,7 +33,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             await _supabase.from('profiles').upsert({
               'id': response.user!.id,
               'name': _nameController.text.trim(),
-              'email': _emailController.text.trim(),
             });
 
             if (mounted) {
@@ -45,15 +44,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             }
           } else {
             // إذا لم توجد جلسة، فهذا يعني أن تفعيل البريد الإلكتروني مطلوب
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Please verify your account via the link sent to your email',
-                  ),
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please verify your account using the link sent to your email',
                 ),
-              );
-            }
+              ),
+            );
           }
         }
       } on AuthException catch (error) {
@@ -61,6 +58,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(error.message)));
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Unexpected error: $error')));
         }
       } finally {
         if (mounted) {

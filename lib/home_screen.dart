@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tasks_page.dart';
-import 'sites_page.dart';
+import 'user_settings_main_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +16,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<String> selectedSites = [];
   bool isLoading = true;
+
+  Future<void> loadUserLanguage(BuildContext context) async {
+    final user = supabase.auth.currentUser;
+
+    if (user == null) return;
+
+    try {
+      final data = await supabase
+          .from('user_settings')
+          .select('language_code')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (data != null && data['language_code'] != null) {
+        final lang = data['language_code'];
+        debugPrint("Loaded language: $lang");
+        if (mounted) {
+          await context.setLocale(Locale(lang));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading language: $e');
+    }
+  }
 
   Future<void> loadSelectedSites() async {
     try {
@@ -54,17 +79,18 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     loadSelectedSites();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadUserLanguage(context);
+    });
   }
 
-  void _openSettings() async {
-    final result = await Navigator.push<bool>(
+  void _openSettings() {
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SitesPage()),
-    );
-
-    if (result == true && mounted) {
-      loadSelectedSites();
-    }
+      MaterialPageRoute(builder: (_) => const UserSettingsMainPage()),
+    ).then((_) {
+      if (mounted) loadSelectedSites();
+    });
   }
 
   String _formatSiteName(String siteName) {
@@ -84,12 +110,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("المواقع المختارة"),
+        title: Text("sites_settings".tr()),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: _openSettings,
-            tooltip: 'الإعدادات',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UserSettingsMainPage()),
+              ).then((_) => loadSelectedSites());
+            },
+            tooltip: 'settings'.tr(),
           ),
         ],
       ),
@@ -100,11 +131,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("لم تقم باختيار أي مواقع للعمل عليها."),
+                  Text("no_sites_currently".tr()),
                   const SizedBox(height: 10),
                   ElevatedButton(
                     onPressed: _openSettings,
-                    child: const Text("اذهب للإعدادات"),
+                    child: Text("settings".tr()),
                   ),
                 ],
               ),
