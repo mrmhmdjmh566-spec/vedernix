@@ -26,6 +26,7 @@ dependencies:
   # مكتبات الفيديو الجديدة
   video_player: ^2.6.0
   chewie: ^1.4.3
+  uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:
