@@ -1,13 +1,5 @@
 -- Create the tasks table
 -- VEDERNIX Database Setup
-DROP TABLE IF EXISTS completed_tasks CASCADE;
-DROP TABLE IF EXISTS task_sites CASCADE;
-DROP TABLE IF EXISTS user_settings CASCADE;
-DROP TABLE IF EXISTS tasks CASCADE;
-DROP TABLE IF EXISTS sites CASCADE;
-DROP TABLE IF EXISTS profiles CASCADE;
-
--- Add pending_users table for restricted registration
 CREATE TABLE IF NOT EXISTS pending_users (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     email text NOT NULL UNIQUE,
@@ -15,9 +7,9 @@ CREATE TABLE IF NOT EXISTS pending_users (
     full_name text NOT NULL,
     site_username text NOT NULL,
     referral_site text NOT NULL,
-    proof_image_url text NOT NULL,
-    status text DEFAULT 'pending' NOT NULL, -- 'pending', 'approved', 'rejected'
-    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+    proof_image_url text,
+    admin_notes text,
+    rejection_reason text
 );
 -- 1. جدول المواقع (Sites)
 CREATE TABLE sites (
@@ -76,6 +68,12 @@ CREATE TABLE completed_tasks (
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS user_type text DEFAULT 'user';
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS full_name text; 
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username text; -- For Advertisers
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS site_usernames jsonb DEFAULT '{}'::jsonb; -- Storage for multiple site usernames
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS referral_site text; -- Keep for legacy
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS status text DEFAULT 'pending';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role text DEFAULT 'user';
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS country text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS bio text;
 
@@ -85,6 +83,17 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_earned double precision DEFA
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS referral_code text UNIQUE;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_verified boolean DEFAULT false;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS language_preference text DEFAULT 'en';
+
+-- Ensure existing users are approved
+-- Set an initial admin (Replace with your actual email)
+-- UPDATE profiles SET role = 'admin', status = 'approved' WHERE id IN (SELECT id FROM auth.users WHERE email = 'your-admin@email.com');
+
+-- Ensure existing data consistency
+UPDATE profiles SET status = 'approved' WHERE status IS NULL;
+UPDATE profiles SET role = 'user' WHERE role IS NULL AND user_type = 'user';
+
+-- Create index for performance
+CREATE INDEX IF NOT EXISTS idx_status ON profiles(status);
 
 -- تفعيل سياسات الأمان لجميع الجداول
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -135,6 +144,23 @@ CREATE TABLE IF NOT EXISTS advertiser_language (
 
 ALTER TABLE user_language ENABLE ROW LEVEL SECURITY;
 ALTER TABLE advertiser_language ENABLE ROW LEVEL SECURITY;
+
+-- ==========================================
+-- STORAGE SETUP (Safe Configuration)
+-- ==========================================
+
+-- Create bucket for user uploads
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('user_uploads', 'user_uploads', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policies for storage.objects
+-- Note: We do NOT use ALTER TABLE on storage.objects as it causes permission errors
+DROP POLICY IF EXISTS "Allow Public View" ON storage.objects;
+CREATE POLICY "Allow Public View" ON storage.objects FOR SELECT USING (bucket_id = 'user_uploads');
+
+DROP POLICY IF EXISTS "Allow Anonymous Uploads" ON storage.objects;
+CREATE POLICY "Allow Anonymous Uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'user_uploads');
 
 -- Reload PostgREST Cache
 SELECT pg_notify('pgrst', 'reload schema');

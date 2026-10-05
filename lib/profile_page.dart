@@ -24,11 +24,8 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final user = supabase.auth.currentUser;
       if (user != null) {
-        final data = await supabase
-            .from('profiles')
-            .select()
-            .eq('id', user.id)
-            .single();
+        final data =
+            await supabase.from('profiles').select().eq('id', user.id).single();
         setState(() {
           profileData = data;
           isLoading = false;
@@ -42,8 +39,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = supabase.auth.currentUser;
-    if (isLoading)
+    if (isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text("profile".tr())),
@@ -167,9 +165,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: () => supabase.auth.signOut().then(
-                (_) => Navigator.pushReplacementNamed(context, '/welcome'),
-              ),
+              onPressed: () async {
+                await supabase.auth.signOut();
+                if (!context.mounted) return;
+                Navigator.pushReplacementNamed(context, '/welcome');
+              },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text(
                 "logout",

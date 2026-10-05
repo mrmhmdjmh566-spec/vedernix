@@ -19,6 +19,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Future<void> _updatePassword() async {
     if (_formKey.currentState!.validate()) {
+      if (_supabase.auth.currentUser == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('general_error'.tr())));
+        return;
+      }
+
       setState(() => _isLoading = true);
       try {
         await _supabase.auth.updateUser(
@@ -39,6 +46,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(error.message)));
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('general_error'.tr())));
         }
       } finally {
         if (mounted) {
