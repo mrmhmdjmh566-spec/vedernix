@@ -27,7 +27,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://kittbflniwjsasxynnqx.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdHRiZmxuaXdqc2FzeHlubnF4Iiwicm9sZSI6MTc3MTg1NTcxNiwidXNlciI6ImFub24iLCJpYXQiOjE3NzE4NTU3MTYsImV4cCI6MjA4NzQzMTcxNn0.BKNG_72qE7HpB8a90LV1wfbL4A4RGFsG6_THItWi7FE',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdHRiZmxuaXdqc2FzeHlubnF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NTU3MTYsImV4cCI6MjA4NzQzMTcxNn0.BKNG_72qE7HpB8a90LV1wfbL4A4RGFsG6_THItWi7FE',
   );
 
   runApp(
@@ -54,7 +54,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final AppLinks _appLinks;
-
   StreamSubscription<Uri>? _linkSubscription;
 
   @override
@@ -238,7 +237,6 @@ class _AdminAuthGuard extends StatefulWidget {
 
 class _AdminAuthGuardState extends State<_AdminAuthGuard> {
   late Future<String?> _roleFuture;
-
   bool _hasRedirected = false;
 
   @override
@@ -254,7 +252,6 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
 
     final User? user = supabase.auth.currentUser;
 
-    // No authenticated user.
     if (user == null) {
       return null;
     }
@@ -318,7 +315,6 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
         BuildContext context,
         AsyncSnapshot<String?> snapshot,
       ) {
-        // Loading.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: Colors.white,
@@ -328,7 +324,6 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
           );
         }
 
-        // Future failed unexpectedly.
         if (snapshot.hasError) {
           _redirectUser(
             '/login',
@@ -345,12 +340,10 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
 
         final String? role = snapshot.data;
 
-        // User is an administrator.
         if (role == 'admin') {
           return const AdminPanelPage();
         }
 
-        // Database/profile error.
         if (role == 'error') {
           _redirectUser(
             '/login',
@@ -365,7 +358,6 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
           );
         }
 
-        // User is logged out.
         if (role == null) {
           _redirectUser(
             '/login',
@@ -380,7 +372,6 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
           );
         }
 
-        // User is logged in but isn't an admin.
         _redirectUser(
           '/home',
           'Access Denied.',
