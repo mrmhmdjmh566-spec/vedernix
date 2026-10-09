@@ -28853,7 +28853,7 @@ $.a5.toString
 s=2
 return A.o(A.aas(),$async$a6m)
 case 2:s=3
-return A.o(A.aq3("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdHRiZmxuaXdqc2FzeHlubnF4Iiwicm9sZSI6MTc3MTg1NTcxNiwidXNlciI6ImFub24iLCJpYXQiOjE3NzE4NTU3MTYsImV4cCI6MjA4NzQzMTcxNn0.BKNG_72qE7HpB8a90LV1wfbL4A4RGFsG6_THItWi7FE","https://kittbflniwjsasxynnqx.supabase.co"),$async$a6m)
+return A.o(A.aq3("sb_publishable_gNK82_mGTF3QN3bRHLjw5A_u9H3-EQe","https://kittbflniwjsasxynnqx.supabase.co"),$async$a6m)
 case 3:$.h1().$3$level$stackTrace("Start",B.db,null)
 if($.a5==null)A.aJF()
 q=$.a5

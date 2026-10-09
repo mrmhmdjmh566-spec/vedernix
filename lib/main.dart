@@ -26,8 +26,7 @@ Future<void> main() async {
   // Initialize Supabase.
   await Supabase.initialize(
     url: 'https://kittbflniwjsasxynnqx.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdHRiZmxuaXdqc2FzeHlubnF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NTU3MTYsImV4cCI6MjA4NzQzMTcxNn0.BKNG_72qE7HpB8a90LV1wfbL4A4RGFsG6_THItWi7FE',
+    anonKey: 'sb_publishable_gNK82_mGTF3QN3bRHLjw5A_u9H3-EQe',
   );
 
   runApp(
@@ -249,7 +248,6 @@ class _AdminAuthGuardState extends State<_AdminAuthGuard> {
   /// Get the current user's role from the profiles table.
   Future<String?> _getUserRole() async {
     final SupabaseClient supabase = Supabase.instance.client;
-
     final User? user = supabase.auth.currentUser;
 
     if (user == null) {
