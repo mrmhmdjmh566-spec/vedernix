@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? userType;
@@ -26,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       TextEditingController();
 
   final Map<String, TextEditingController> _siteControllers = {};
+  final Map<String, TextEditingController> _referrerControllers = {};
 
   final List<String> _selectedSites = [];
 
@@ -46,17 +48,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
     'wmrfast',
   ];
 
+  final Map<String, String> _siteLinks = {
+    'seofast': 'https://seo-fast.ru/?r=3151488',
+    'aviso': 'https://aviso.bz/?r=khroba_242',
+    'socpublic': 'https://socpublic.com/?i=9565193&slide=3',
+    'unu': 'https://unu.im/re/4409943/work',
+    'ipweb': 'https://www.ipweb.ru/?gg102001293699541602847',
+    'taskpay': 'https://taskpay.ru/?ref=3430487',
+    'fastsmm': 'https://fastsmm.ru/u/256455',
+    'profittask': 'https://profittask.com/?from=1425298',
+    'wmrfast': 'https://wmrfast.com/?r=2360765',
+  };
+
   final Map<String, String> _siteDisplayNames = {
     'seofast': 'SEO Fast',
     'aviso': 'Aviso',
     'socpublic': 'SocPublic',
-    'unu': 'Unu',
-    'ipweb': 'IPWeb',
+    'unu': 'UNU',
+    'ipweb': 'IPweb',
     'taskpay': 'Taskpay',
-    'fastsmm': 'FastSMM',
-    'profittask': 'Profittask',
+    'fastsmm': 'FastSMM.ru',
+    'profittask': 'ProfitTask',
     'wmrfast': 'WMRFast',
   };
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Select all nine sites by default for worker registration.
+    _selectedSites.addAll(_sites);
+
+    for (final site in _sites) {
+      _siteControllers[site] = TextEditingController();
+      _referrerControllers[site] = TextEditingController();
+    }
+  }
 
   @override
   void dispose() {
@@ -67,6 +94,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPasswordController.dispose();
 
     for (final controller in _siteControllers.values) {
+      controller.dispose();
+    }
+
+    for (final controller in _referrerControllers.values) {
       controller.dispose();
     }
 
@@ -89,8 +120,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         throw Exception('please_accept_terms'.tr());
       }
 
-      if (widget.userType != 'advertiser' && _selectedSites.isEmpty) {
-        throw Exception('select_site'.tr());
+      final bool isAdvertiser = widget.userType == 'advertiser';
+
+      if (!isAdvertiser && _selectedSites.length != _sites.length) {
+        throw Exception('Please select all 9 sites and complete their details.');
       }
 
       setState(() {
@@ -98,12 +131,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       final Map<String, String> siteUsernamesMapping = {};
+      final Map<String, String> siteReferrersMapping = {};
 
-      for (final site in _selectedSites) {
-        final controller = _siteControllers[site];
+      // Worker accounts must provide both usernames for every site.
+      // Advertiser registration keeps its original behavior.
+      if (!isAdvertiser) {
+        for (final site in _sites) {
+          final username = _siteControllers[site]?.text.trim() ?? '';
+          final referrer = _referrerControllers[site]?.text.trim() ?? '';
 
-        if (controller != null) {
-          siteUsernamesMapping[site] = controller.text.trim();
+          if (username.isEmpty || referrer.isEmpty) {
+            throw Exception(
+              'Enter both username and referrer username for every site.',
+            );
+          }
+
+          siteUsernamesMapping[site] = username;
+          siteReferrersMapping[site] = referrer;
         }
       }
 
@@ -112,12 +156,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         '${_emailController.text.trim()}',
       );
 
+      final Map<String, dynamic> authMetadata = {
+        'full_name': _fullNameController.text.trim(),
+      };
+
+      if (!isAdvertiser) {
+        // Referrer usernames are stored in Supabase Auth user metadata.
+        authMetadata['site_referrers'] = siteReferrersMapping;
+      }
+
       final AuthResponse res = await supabase.auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        data: {
-          'full_name': _fullNameController.text.trim(),
-        },
+        data: authMetadata,
       );
 
       if (res.user == null) {
@@ -132,11 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'REGISTRATION_FLOW: Auth success. UserID: $userId',
       );
 
-      if (widget.userType == 'advertiser') {
-        debugPrint(
-          'PROFILE_SYNC: Upserting advertiser profile for $userId',
-        );
-
+      if (isAdvertiser) {
         await supabase.from('profiles').upsert({
           'id': userId,
           'email': _emailController.text.trim(),
@@ -153,10 +200,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'PROFILE_SYNC: Advertiser profile successfully synchronized.',
         );
       } else {
-        debugPrint(
-          'PROFILE_SYNC: Upserting regular user profile for $userId',
-        );
-
         await supabase.from('profiles').upsert({
           'id': userId,
           'email': _emailController.text.trim(),
@@ -173,7 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      final String message = widget.userType == 'advertiser'
+      final String message = isAdvertiser
           ? 'Registration successful!'
           : 'register_success_message'.tr();
 
@@ -241,13 +284,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
 
         _siteControllers[site] ??= TextEditingController();
+        _referrerControllers[site] ??= TextEditingController();
       } else {
         _selectedSites.remove(site);
 
         final controller = _siteControllers.remove(site);
         controller?.dispose();
+
+        final referrerController = _referrerControllers.remove(site);
+        referrerController?.dispose();
       }
     });
+  }
+
+  Future<void> _openSite(String site) async {
+    final String? link = _siteLinks[site];
+
+    if (link == null) return;
+
+    final Uri uri = Uri.parse(link);
+
+    try {
+      final bool opened = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open this website.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open this website.'),
+        ),
+      );
+    }
   }
 
   Widget _buildTextField({
@@ -320,6 +398,97 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Widget _buildLinksSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFAFA),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.link_rounded,
+                color: Color(0xFFE85D24),
+                size: 22,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Links',
+                style: TextStyle(
+                  color: Color(0xFF171717),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Open each website and enter the username and referrer username '
+            'for your account below. These links are provided for account '
+            'registration. Any benefits depend on each platform’s own terms.',
+            style: TextStyle(
+              color: Color(0xFF777777),
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ..._sites.map(
+            (site) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => _openSite(site),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.open_in_new_rounded,
+                          size: 17,
+                          color: Color(0xFFE85D24),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _siteDisplayNames[site] ?? site,
+                            style: const TextStyle(
+                              color: Color(0xFF171717),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: Color(0xFF888888),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSiteSelector(String site) {
     final bool selected = _selectedSites.contains(site);
     final String displayName = _siteDisplayNames[site] ?? site;
@@ -328,10 +497,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       duration: const Duration(milliseconds: 180),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFFFFF1EA) : const Color(0xFFF9F9F9),
+        color: selected
+            ? const Color(0xFFFFF1EA)
+            : const Color(0xFFF9F9F9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: selected ? const Color(0xFFE85D24) : const Color(0xFFE7E7E7),
+          color: selected
+              ? const Color(0xFFE85D24)
+              : const Color(0xFFE7E7E7),
           width: selected ? 1.4 : 1,
         ),
       ),
@@ -359,8 +532,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         subtitle: Text(
           selected
-              ? 'Username will be saved for this site'
-              : 'Select if you work on this site',
+              ? 'Username and referrer username are required'
+              : 'Select this site',
           style: const TextStyle(
             color: Color(0xFF888888),
             fontSize: 12,
@@ -388,7 +561,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
         validator: (value) {
           if (_selectedSites.contains(site) &&
               (value == null || value.trim().isEmpty)) {
-            return 'required_field'.tr();
+            return 'Enter your username for $displayName';
+          }
+
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildSiteReferrerField(String site) {
+    final controller = _referrerControllers[site];
+
+    if (controller == null) {
+      return const SizedBox.shrink();
+    }
+
+    final String displayName = _siteDisplayNames[site] ?? site;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _buildTextField(
+        controller: controller,
+        label: '$displayName Referrer Username',
+        icon: Icons.group_outlined,
+        validator: (value) {
+          if (_selectedSites.contains(site) &&
+              (value == null || value.trim().isEmpty)) {
+            return 'Enter the referrer username for $displayName';
           }
 
           return null;
@@ -419,7 +619,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header
+                    // Page header.
                     Row(
                       children: [
                         Container(
@@ -463,10 +663,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 24),
 
-                    // Main card
+                    // Main registration card.
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -487,6 +686,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           if (!isAdvertiser) ...[
+                            _buildLinksSection(),
+                            const SizedBox(height: 18),
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
@@ -521,6 +722,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             const SizedBox(height: 20),
                           ],
+
+                          // Full name.
                           _buildTextField(
                             controller: _fullNameController,
                             label: 'full_name'.tr(),
@@ -532,6 +735,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
+
+                          // Advertiser username only.
                           if (isAdvertiser) ...[
                             const SizedBox(height: 14),
                             _buildTextField(
@@ -546,7 +751,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               },
                             ),
                           ],
+
                           const SizedBox(height: 14),
+
+                          // Email.
                           _buildTextField(
                             controller: _emailController,
                             label: 'email_address'.tr(),
@@ -561,7 +769,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
+
                           const SizedBox(height: 14),
+
+                          // Password.
                           _buildTextField(
                             controller: _passwordController,
                             label: 'password'.tr(),
@@ -592,7 +803,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
+
                           const SizedBox(height: 14),
+
+                          // Confirm password.
                           _buildTextField(
                             controller: _confirmPasswordController,
                             label: 'confirm_password'.tr(),
@@ -619,10 +833,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               return null;
                             },
                           ),
+
+                          // Worker sites and account details.
                           if (!isAdvertiser) ...[
                             const SizedBox(height: 26),
                             const Text(
-                              'Choose the sites you work on',
+                              'Choose all 9 sites',
                               style: TextStyle(
                                 color: Color(0xFF171717),
                                 fontSize: 18,
@@ -631,7 +847,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             const SizedBox(height: 5),
                             const Text(
-                              'Select your sites and enter the username you use on each one.',
+                              'All nine sites are required. Enter the username '
+                              'and referrer username you use on each site.',
                               style: TextStyle(
                                 color: Color(0xFF777777),
                                 fontSize: 13,
@@ -639,9 +856,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             const SizedBox(height: 14),
-                            ..._sites.map(
-                              _buildSiteSelector,
-                            ),
+
+                            ..._sites.map(_buildSiteSelector),
+
                             if (_selectedSites.isNotEmpty) ...[
                               const SizedBox(height: 10),
                               Container(
@@ -658,7 +875,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     const Text(
-                                      'Site usernames',
+                                      'Site usernames and referrers',
                                       style: TextStyle(
                                         color: Color(0xFF171717),
                                         fontSize: 16,
@@ -669,12 +886,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ..._selectedSites.map(
                                       _buildSiteUsernameField,
                                     ),
+                                    ..._selectedSites.map(
+                                      _buildSiteReferrerField,
+                                    ),
                                   ],
                                 ),
                               ),
                             ],
                           ],
+
                           const SizedBox(height: 18),
+
+                          // Terms checkbox.
                           InkWell(
                             borderRadius: BorderRadius.circular(14),
                             onTap: () {
@@ -701,9 +924,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        top: 12,
-                                      ),
+                                      padding: const EdgeInsets.only(top: 12),
                                       child: Text(
                                         'terms_and_conditions'.tr(),
                                         style: const TextStyle(
@@ -718,7 +939,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                           ),
+
                           const SizedBox(height: 16),
+
+                          // Register button.
                           SizedBox(
                             height: 52,
                             child: ElevatedButton(

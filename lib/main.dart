@@ -1,8 +1,11 @@
+
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'admin_panel_page.dart';
@@ -16,10 +19,17 @@ import 'welcome_page.dart';
 
 /// Global navigator key.
 /// Used for navigation from places outside the normal widget tree.
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> navigatorKey =
+    GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Experimental: expose Flutter semantics to web accessibility tools.
+  // This does not guarantee that Chrome Translate will translate the app.
+  if (kIsWeb) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
 
   await EasyLocalization.ensureInitialized();
 
